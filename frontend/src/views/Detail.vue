@@ -78,7 +78,7 @@
                 <span class="truncate">{{ img.camera_model || '未知设备' }}</span>
               </div>
               
-              <!-- [新增] 分辨率信息 -->
+              <!-- 分辨率信息 -->
               <div class="info-card">
                 <el-icon><Picture /></el-icon>
                 <span>{{ img.width }} x {{ img.height }} px</span>

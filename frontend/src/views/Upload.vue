@@ -176,7 +176,7 @@ const submitUpload = async () => {
   formData.append('is_public', isPublic.value ? 'True' : 'False')
   
   if (selectedCategory.value) {
-    formData.append('upload_category', selectedCategory.value)
+    formData.append('category_id', selectedCategory.value)
   }
 
   tags.value.forEach(tag => {

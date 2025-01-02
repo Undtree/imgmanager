@@ -8,6 +8,7 @@ from .serializers import ImageSerializer, TagSerializer, CategorySerializer
 from .utils import get_exif_data, make_thumbnail
 from .ai_utils import classify_image
 from PIL import Image as PilImage 
+import jieba
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -62,6 +63,7 @@ class ImageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 Q(tags__name__icontains=search_query) |
                 Q(location__icontains=search_query) |
+                Q(category__name__icontains=search_query) |
                 Q(camera_model__icontains=search_query)
             ).distinct()
 
@@ -143,49 +145,69 @@ class MCPView(APIView):
     MCP 协议接口
     URL: GET /api/mcp/search?q=...
     """
-    permission_classes = [permissions.AllowAny] # 允许外部 Agent 访问
+    permission_classes = [permissions.IsAuthenticated] # 允许外部 Agent 访问
 
     def get(self, request):
         query = request.query_params.get('q', '')
         
-        # 简单的分词逻辑：把 "海边的照片" -> ["海边", "照片"]
-        # 在没有 GPT API 的情况下，这是最经济的办法
-        keywords = query.split() 
+        if not query:
+            return Response({"status": "error", "msg": "Query is empty"})
+
+        # === 核心逻辑升级：中文分词 ===
         
-        # 构建查询：标签包含关键词 OR 描述包含关键词 OR 地点包含
+        # 定义“停用词”：这些词对搜索没有帮助，应该过滤掉
+        STOP_WORDS = {
+            "找", "一下", "帮我", "的", "照片", "图片", "图", "有没有", 
+            "搜索", "查看", "显示", "里", "关于", "啊", "呀", "呢"
+        }
+
+        # 使用 jieba 搜索引擎模式分词
+        # 例如："帮我找一下海边的照片" -> ['帮我', '找', '一下', '海边', '的', '照片']
+        seg_list = jieba.lcut_for_search(query)
+        
+        # 过滤掉停用词，只保留关键词
+        keywords = [word for word in seg_list if word not in STOP_WORDS and len(word.strip()) > 0]
+        
+        print(f"原始查询: {query}, 提取关键词: {keywords}") # 用于调试
+
+        # 如果分词后没东西了（用户只输入了“照片”），则不返回结果，防止返回全库
+        if not keywords:
+             return Response({
+                "status": "success",
+                "results": [],
+                "msg": "未提取到有效关键词"
+            })
+
+        # 构建查询
         q_obj = Q()
         for k in keywords:
-            if len(k) > 1: # 忽略单字
-                q_obj |= Q(tags__name__icontains=k)
-                q_obj |= Q(camera_model__icontains=k)
-                q_obj |= Q(location__icontains=k)
+            # 只要匹配到一个关键词即可 (OR 逻辑)
+            # 匹配 标签、分类、描述、地点、相机型号
+            q_obj |= Q(tags__name__icontains=k)
+            q_obj |= Q(category__name__icontains=k)
+            q_obj |= Q(location__icontains=k)
+            q_obj |= Q(camera_model__icontains=k)
 
-        images = Image.objects.filter(q_obj).distinct()[:10] # 最多返回10条
+        # 只查当前用户可见的图片 (公开 OR 自己的)
+        base_qs = Image.objects.filter(Q(is_public=True) | Q(user=request.user))
+        
+        # 应用搜索条件
+        images = base_qs.filter(q_obj).distinct().order_by('-upload_time')[:10]
 
-        # 构造符合 MCP/Agent 阅读的 JSON 格式
         results = []
         for img in images:
-            # 获取所有标签名
             tag_names = ",".join([t.name for t in img.tags.all()])
-            
-            # 构造给 AI 看的描述文本
-            desc = (
-                f"图片ID: {img.id}, "
-                f"拍摄于: {img.shoot_time or '未知时间'}, "
-                f"地点: {img.location or '未知地点'}, "
-                f"标签: {tag_names}, "
-                f"相机: {img.camera_model}"
-            )
+            desc = f"拍摄于:{img.shoot_time}, 标签:{tag_names}"
             
             results.append({
                 "id": img.id,
-                # 拼接完整的图片 URL
                 "url": request.build_absolute_uri(img.img_url.url),
                 "description": desc,
-                "score": 1.0 # 模拟评分
+                "score": 1.0
             })
 
         return Response({
             "status": "success",
-            "results": results
+            "results": results,
+            "keywords": keywords # 可以返回关键词给前端展示，显得更智能
         })

@@ -20,9 +20,8 @@ class ImageSerializer(serializers.ModelSerializer):
         write_only=True, 
         required=False
     )
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), 
-        source='category', 
+    category_id = serializers.CharField(
+        allow_blank=True, 
         write_only=True,
         required=False,
         allow_null=True
@@ -32,35 +31,44 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = '__all__'
-        read_only_fields = ('user', 'thumb_url', 'width', 'height', 'camera_model', 'shoot_time', 'location', 'file_size', 'iso', 'f_stop', 'exposure_time')
+        read_only_fields = ('user', 'category', 'thumb_url', 'width', 'height', 'camera_model', 'shoot_time', 'location', 'file_size', 'iso', 'f_stop', 'exposure_time')
 
     def create(self, validated_data):
         tag_names = validated_data.pop('tag_names', [])
         # 创建图片实例
-        image = Image.objects.create(**validated_data)
-        
-        # 处理标签：如果存在则获取，不存在则创建
+        image_data = {**validated_data}
+        cat_name = validated_data.pop('category_id', None)
+
+        if cat_name:
+            # 存在则获取，不存在则创建
+            category, _ = Category.objects.get_or_create(name=cat_name)
+            image_data['category'] = category
+        else:
+            image_data['category'] = None
+
+        image = Image.objects.create(**image_data)
+
+        # 处理标签；如果存在则获取，不存在则创建
         for name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=name, defaults={'source': 0})
+            tag, _ = Tag.objects.get_or_create(name=name, defaults={'source': 0})
             image.tags.add(tag)
         
         return image
 
     def update(self, instance, validated_data):
-        cat_name = validated_data.pop('upload_category', None)
         tag_names = validated_data.pop('tag_names', None)
+        cat_name = validated_data.pop('category_id', None)
         
+        # 更新相册
+        if cat_name == "":
+            instance.category = None
+        elif cat_name:
+            category, _ = Category.objects.get_or_create(name=cat_name)
+            instance.category = category
+
         # 标准更新
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-
-        # 更新相册
-        if cat_name is not None:
-            if cat_name == '':
-                instance.category = None
-            else:
-                category, _ = Category.objects.get_or_create(name=cat_name)
-                instance.category = category
         
         # 更新标签 (覆盖式)
         if tag_names is not None:

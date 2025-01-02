@@ -15,47 +15,49 @@ B/S Software Course Assignment
 
 **前置要求**
 
-Python 3.9+
-Node.js 18+
-MySQL 8.0
+- Python 3.9+
+
+- Node.js 18+
+
+- MySQL 8.0
 
 1. 启动数据库
 
-在 MySQL 中创建一个数据库：
-
-```SQL
-CREATE DATABASE <name> CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+    在 MySQL 中创建一个数据库：
+    
+    ```SQL
+    CREATE DATABASE <name> CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ```
 
 2. 后端配置
 
-```Bash
-# 在项目根目录下
-cd backend
-# 创建虚拟环境（可选）
-python -m venv venv
-source venv/bin/activate  # Windows 使用 venv\Scripts\activate
+    ```Bash
+    # 在项目根目录下
+    cd backend
+    # 创建虚拟环境（可选）
+    python -m venv venv
+    source venv/bin/activate  # Windows 使用 venv\Scripts\activate
 
-# 安装依赖
-pip install -r requirements.txt
+    # 安装依赖
+    pip install -r requirements.txt
 
-# 修改 settings.py 中的 DATABASES 配置为你的本地 MySQL 账号密码
+    # 修改 settings.py 中的 DATABASES 配置为你的本地 MySQL 账号密码
 
-# 迁移数据库
-python manage.py migrate
+    # 迁移数据库
+    python manage.py migrate
 
-# 启动后端
-python manage.py runserver # 开发用服务器
-```
+    # 启动后端
+    python manage.py runserver # 开发用服务器
+    ```
 
 3. 前端配置
 
-```Bash
-# 在项目根目录下
-cd frontend
-npm install
-npm run dev
-```
+    ```Bash
+    # 在项目根目录下
+    cd frontend
+    npm install
+    npm run dev
+    ```
 ### 2. 使用 docker 部署
 
 克隆仓库后：

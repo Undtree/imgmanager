@@ -67,8 +67,8 @@ const getFullUrl = (url) => {
 const loadData = async () => {
   loading.value = true
   try {
-    const params = { 
-      search: route.query.search,
+    const params = {
+      q: route.query.q || route.query.search || '', 
       ordering: '-upload_time'
     }
 
@@ -93,7 +93,7 @@ const loadData = async () => {
     images.value = rawData.map(img => ({
         ...img,
         tags: img.tags || [], 
-        // [修改] 使用 getFullUrl 处理路径
+        // 使用 getFullUrl 处理路径
         img_url: getFullUrl(img.img_url),
         thumb_url: getFullUrl(img.thumb_url || img.img_url)
     }))
@@ -111,5 +111,5 @@ const handleTabChange = () => {
 
 onMounted(loadData)
 
-watch(() => route.query.search, loadData)
+watch(() => route.query, loadData, { deep: true })
 </script>

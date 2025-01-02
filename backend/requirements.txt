@@ -10,3 +10,4 @@ torch           # AI 部分
 deep-translator
 transformers
 tokenizers
+jieba

@@ -45,7 +45,7 @@
         <template v-if="userStore.token">
           <el-button type="primary" @click="$router.push('/upload')">上传图片</el-button>
           <el-dropdown>
-            <span class="cursor-pointer text-gray-700 ml-2">
+            <span class="cursor-pointer text-gray-700 dark:text-gray-300 ml-2">
               {{ userStore.username }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
             </span>
             <template #dropdown>
@@ -100,7 +100,7 @@ const handleThemeCommand = (command) => {
 }
 
 const handleSearch = () => {
-  router.push({ path: '/', query: { search: searchKeyword.value } })
+  router.push({ path: '/', query: { q: searchKeyword.value } })
   mobileMenuOpen.value = false
 }
 

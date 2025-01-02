@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useThemeStore } from '@/stores/themes'
 import { useUserStore } from '@/stores/user'
+import AIChatBot from '@/components/AIChatBot.vue'
 
 const themeStore = useThemeStore()
 const userStore = useUserStore()
@@ -24,6 +25,7 @@ onMounted(async () => {
   -->
   <div class="min-h-screen transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-200">
     <RouterView />
+    <AIChatBot v-if="useUserStore.token"/>
   </div>
 </template>
 
