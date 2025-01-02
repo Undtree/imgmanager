@@ -290,8 +290,20 @@ const handleThemeCommand = (cmd) => themeStore.setTheme(cmd)
   box-shadow: none !important;
   transition: all 0.3s;
 }
+:deep(.custom-input .el-input__inner) {
+  color: #111827 !important; /* gray-900 */
+  font-weight: 500;
+  /* 修复 placeholder 颜色，让它稍微浅一点 */
+  --el-input-placeholder-color: #6b7280; 
+}
+
 :deep(.dark .custom-input .el-input__wrapper) {
   background-color: #1f2937; /* gray-800 */
+}
+:deep(.dark .custom-input .el-input__inner) {
+  color: #ffffff !important; /* 纯白文字 */
+  /* 修复 placeholder 颜色 */
+  --el-input-placeholder-color: #9ca3af;
 }
 
 /* 聚焦时的效果 */
@@ -301,6 +313,7 @@ const handleThemeCommand = (cmd) => themeStore.setTheme(cmd)
 }
 :deep(.dark .custom-input .el-input__wrapper.is-focus) {
   background-color: #111827;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3) !important;
 }
 
 /* Tabs 样式优化 */
