@@ -153,8 +153,7 @@ class MCPView(APIView):
         if not query:
             return Response({"status": "error", "msg": "Query is empty"})
 
-        # === 核心逻辑升级：中文分词 ===
-        
+        # 中文分词
         # 定义“停用词”：这些词对搜索没有帮助，应该过滤掉
         STOP_WORDS = {
             "找", "一下", "帮我", "的", "照片", "图片", "图", "有没有", 
