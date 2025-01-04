@@ -4,6 +4,7 @@ djangorestframework-simplejwt
 PyJWT
 mysqlclient
 Pillow
+pillow-heif
 django-filter
 django-cors-headers
 torch           # AI 部分

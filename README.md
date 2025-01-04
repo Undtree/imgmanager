@@ -75,3 +75,7 @@ docker-compose up -d --build
 # 由于需要下载模型文件，首次下载可能较慢。
 ```
 
+!!! 有关 HF_TOKEN:
+
+    由于 HF 访问限制，公开仓库默认不允许上传个人 token 。这里请您自己在 Hugging Face 上申请 token 。
+

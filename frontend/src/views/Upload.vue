@@ -3,6 +3,17 @@
   <div class="max-w-2xl mx-auto p-6 mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-colors duration-300">
     <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">上传图片</h1>
     
+    <div class="flex items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+      <el-button 
+        circle 
+        size="large"
+        @click="$router.push('/')" 
+        class="mr-4 !border-none !bg-gray-100 dark:!bg-gray-700 hover:!bg-blue-100 dark:hover:!bg-blue-900 transition-colors"
+      >
+        <el-icon class="text-gray-600 dark:text-gray-200"><ArrowLeft /></el-icon>
+      </el-button>
+    </div>
+
     <el-form label-position="top">
       <!-- 1. 相册选择 -->
       <div class="mb-6">
@@ -176,7 +187,7 @@ const submitUpload = async () => {
   formData.append('is_public', isPublic.value ? 'True' : 'False')
   
   if (selectedCategory.value) {
-    formData.append('category_id', selectedCategory.value)
+    formData.append('category_upload', selectedCategory.value)
   }
 
   tags.value.forEach(tag => {

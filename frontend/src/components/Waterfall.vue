@@ -68,38 +68,101 @@ const formatDate = (date) => dayjs(date).format('MM-DD HH:mm')
 
 <style scoped>
 /* 核心布局 */
-.masonry-container {
-  column-count: 2;
-  column-gap: 20px; /* 加大一点间距，让悬浮更从容 */
+.masonry-wrapper {
+  width: 100%;
+  margin: 0 auto;
 }
-@media (min-width: 768px) { .masonry-container { column-count: 3; } }
-@media (min-width: 1024px) { .masonry-container { column-count: 4; } }
-@media (min-width: 1280px) { .masonry-container { column-count: 5; } }
+
+.masonry-container {
+  /* 默认（移动端）设置：更紧凑的间距 */
+  column-count: 2;
+  column-gap: 12px; /* 移动端间距缩小到 12px，让图片更大 */
+}
+
+@media (min-width: 640px) {
+  /* 平板竖屏 / 大屏手机 */
+  .masonry-container {
+    column-count: 2;
+    column-gap: 16px; /* 稍微拉开间距 */
+  }
+}
+
+@media (min-width: 768px) {
+  /* iPad / 笔记本小屏 */
+  .masonry-container {
+    column-count: 3;
+    column-gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* 普通桌面显示器 */
+  .masonry-container {
+    column-count: 4;
+    column-gap: 24px; /* PC 端享受大间距 */
+  }
+}
+
+@media (min-width: 1440px) {
+  /* 大屏显示器 */
+  .masonry-container {
+    column-count: 5;
+    column-gap: 24px;
+  }
+}
+
+@media (min-width: 1920px) {
+  /* 超宽屏 */
+  .masonry-container {
+    column-count: 6;
+    column-gap: 24px;
+  }
+}
 
 .image-card-wrapper {
+  /* 防止卡片在列之间被截断 */
   break-inside: avoid;
-  margin-bottom: 20px;
-  /* 这里的 z-index 和 position 很重要，保证悬浮时不被遮挡 */
+  /* 底部间距与列间距保持一致或稍大 */
+  margin-bottom: 10px; /* 移动端 */
+  
+  /* 这里的 z-index 和 position 保证悬浮效果 */
   position: relative;
   z-index: 1;
-  transition: z-index 0.3s; 
+  transition: z-index 0s step-end; /* 悬浮结束后立即降低层级 */
 }
-.image-card-wrapper:hover {
-  z-index: 10; /* 悬浮时层级最高 */
+
+@media (min-width: 768px) {
+  .image-card-wrapper {
+    margin-bottom: 24px; /* PC 端增大底部间距 */
+  }
+  .image-card-wrapper:hover {
+    z-index: 10;
+    transition: z-index 0s step-start; /* 悬浮开始时立即提高层级 */
+  }
 }
 
 /* 卡片样式 */
 .image-card {
-  border-radius: 16px; /* 更圆润的角 */
+  border-radius: 8px; /* 移动端圆角稍小 */
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  will-change: transform, box-shadow;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* 移动端阴影极轻，提升性能 */
+  transition: all 0.3s ease;
+  will-change: transform;
 }
 
-/* 悬停效果：提拉 + 深阴影 */
-.image-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+@media (min-width: 768px) {
+  .image-card {
+    border-radius: 16px; /* 更圆润的角 */
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform, box-shadow;
+  }
+
+  /* 悬停效果：提拉 + 深阴影 */
+  .image-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
 }
 </style>

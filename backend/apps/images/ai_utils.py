@@ -11,8 +11,8 @@ model_id = "openai/clip-vit-base-patch32"
 
 # 加载模型并立即移动到指定设备 (降低系统内存占用)
 try:
-    model = CLIPModel.from_pretrained(model_id).to(device)
-    processor = CLIPProcessor.from_pretrained(model_id)
+    model = CLIPModel.from_pretrained(model_id, use_safetensors=True).to(device)
+    processor = CLIPProcessor.from_pretrained(model_id, use_safetensors=True)
     print(f"CLIP 模型加载完成 (运行于 {device})")
 except Exception as e:
     print(f"模型加载失败: {e}")

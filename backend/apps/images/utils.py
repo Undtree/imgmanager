@@ -3,6 +3,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 from datetime import datetime
 import io
 import os
+import pillow_heif
 from django.core.files.base import ContentFile
 
 def _convert_to_degrees(value):
@@ -11,6 +12,48 @@ def _convert_to_degrees(value):
     m = value[1]
     s = value[2]
     return d + (m / 60.0) + (s / 3600.0)
+
+pillow_heif.register_heif_opener()
+
+def handle_heic_image(image_file):
+    """
+    检查是否为 HEIC 文件，如果是，则转换为 JPG 并保留 EXIF。
+    如果不是，原样返回。
+    """
+    # 检查扩展名
+    if not image_file.name.lower().endswith(('.heic', '.heif')):
+        return image_file
+
+    try:
+        # 打开 HEIC 图片
+        img = PilImage.open(image_file)
+        
+        # 转换为 RGB (HEIC 可能是 RGBA)
+        img = img.convert('RGB')
+        
+        # 提取 EXIF 数据
+        exif_data = img.info.get('exif')
+
+        # 保存为 JPEG 到内存中
+        output_io = io.BytesIO()
+        save_kwargs = {'format': 'JPEG', 'quality': 90}
+        
+        # 如果有 EXIF，就带上
+        if exif_data:
+            save_kwargs['exif'] = exif_data
+            
+        img.save(output_io, **save_kwargs)
+        output_io.seek(0)
+        
+        # 生成新的文件名 (xxx.heic -> xxx.jpg)
+        new_name = image_file.name.rsplit('.', 1)[0] + '.jpg'
+        
+        # 返回 Django 可识别的文件对象
+        return ContentFile(output_io.read(), name=new_name)
+
+    except Exception as e:
+        print(f"HEIC 转换失败: {e}")
+        return image_file # 如果失败，返回原文件尝试处理
 
 def get_exif_data(image_file):
     """

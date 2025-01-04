@@ -5,6 +5,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Detail from '../views/Detail.vue'
 import Upload from '../views/Upload.vue'
+import Profile from '../views/Profile.vue'
 import ImageEdit from '../views/ImageEdit.vue'
 
 const router = createRouter({
@@ -34,6 +35,11 @@ const router = createRouter({
       path: '/edit/:id', 
       component: ImageEdit, 
       meta: { requiresAuth: true } 
+    },
+    { 
+      path: '/profile', 
+      component: Profile, 
+      meta: { requiresAuth: true, title: '个人中心' }
     },
   ]
 })

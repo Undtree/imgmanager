@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Image, Tag, Category
+from .utils import handle_heic_image 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,7 +21,7 @@ class ImageSerializer(serializers.ModelSerializer):
         write_only=True, 
         required=False
     )
-    category_id = serializers.CharField(
+    category_upload = serializers.CharField(
         allow_blank=True, 
         write_only=True,
         required=False,
@@ -33,11 +34,20 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('user', 'category', 'thumb_url', 'width', 'height', 'camera_model', 'shoot_time', 'location', 'file_size', 'iso', 'f_stop', 'exposure_time')
 
+    def validate_img_url(self, value):
+        """
+        在字段验证阶段拦截图片。
+        如果是 HEIC，这里会把它变成 JPG 对象。
+        """
+        # 调用工具函数处理
+        converted_file = handle_heic_image(value)
+        return converted_file
+    
     def create(self, validated_data):
         tag_names = validated_data.pop('tag_names', [])
         # 创建图片实例
+        cat_name = validated_data.pop('category_upload', None)
         image_data = {**validated_data}
-        cat_name = validated_data.pop('category_id', None)
 
         if cat_name:
             # 存在则获取，不存在则创建
@@ -57,7 +67,7 @@ class ImageSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         tag_names = validated_data.pop('tag_names', None)
-        cat_name = validated_data.pop('category_id', None)
+        cat_name = validated_data.pop('category_upload', None)
         
         # 更新相册
         if cat_name == "":

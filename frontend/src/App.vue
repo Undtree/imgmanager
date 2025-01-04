@@ -25,7 +25,7 @@ onMounted(async () => {
   -->
   <div class="min-h-screen transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-200">
     <RouterView />
-    <AIChatBot v-if="useUserStore.token"/>
+    <AIChatBot v-if="userStore.token"/>
   </div>
 </template>
 

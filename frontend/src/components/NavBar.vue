@@ -50,7 +50,8 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                <el-dropdown-item icon="User" @click="$router.push('/profile')">个人中心</el-dropdown-item>
+                <el-dropdown-item icon="SwitchButton" @click="handleLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -128,7 +129,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/themes'
-import { Search, ArrowDown, Menu, Sunny, Moon, Monitor, SwitchButton, Plus } from '@element-plus/icons-vue'
+import { Search, ArrowDown, Menu, Sunny, Moon, Monitor, SwitchButton, Plus, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()

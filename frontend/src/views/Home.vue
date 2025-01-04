@@ -2,7 +2,7 @@
   <div class="min-h-screen pb-20">
     <NavBar />
     
-    <div class="container mx-auto px-4 py-6">
+    <div class="container mx-auto px-2 md:px-6 py-4 md:py-8 max-w-[1600px]">
       <!-- 顶部切换 -->
       <div class="flex justify-center mb-6">
         <el-radio-group v-model="activeTab" size="large" @change="handleTabChange">
@@ -28,7 +28,7 @@
     </div>
 
     <!-- 移动端 FAB 上传按钮 -->
-    <div class="fixed right-6 bottom-8 md:hidden z-40">
+    <div class="fixed left-6 bottom-8 md:hidden z-40">
       <button 
         @click="router.push('/upload')"
         class="w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-700 active:scale-90 transition transform duration-200">

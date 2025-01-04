@@ -208,7 +208,7 @@ const saveEdit = () => {
     formData.append('img_url', blob, 'edited.jpg')
     formData.append('is_public', form.is_public ? 'True' : 'False')
     
-    if (form.category) formData.append('category_id', form.category)
+    if (form.category) formData.append('category_upload', form.category)
     form.tags.forEach(tag => formData.append('tag_names', tag))
 
     try {
