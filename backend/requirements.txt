@@ -1,0 +1,9 @@
+Django>=4.2
+djangorestframework
+djangorestframework-simplejwt
+PyJWT
+mysqlclient
+Pillow
+django-cors-headers
+torch           # AI 部分
+torchvision     # AI 部分
