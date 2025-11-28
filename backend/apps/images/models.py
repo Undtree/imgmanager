@@ -14,6 +14,9 @@ class Tag(models.Model):
 
     class Meta:
         db_table = 'tb_tag'
+    
+    def __str__(self):
+        return self.name
 
 class Image(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -24,18 +27,21 @@ class Image(models.Model):
     thumb_url = models.ImageField(upload_to='thumbs/%Y/%m/', null=True, blank=True)
     
     # 元数据
-    file_size = models.IntegerField(null=True) # KB
+    file_size = models.IntegerField(null=True, help_text="Unit: KB")
     width = models.IntegerField(null=True)
     height = models.IntegerField(null=True)
     
-    # EXIF 信息
+    # EXIF
     camera_model = models.CharField(max_length=100, null=True, blank=True)
     shoot_time = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=100, null=True, blank=True)
+    iso = models.IntegerField(null=True, blank=True)  # 新增
+    f_stop = models.FloatField(null=True, blank=True) # 新增
+    exposure_time = models.CharField(max_length=20, null=True, blank=True) # 新增
     
-    # 其他属性
     is_public = models.BooleanField(default=True)
     upload_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'tb_image'
+        ordering = ['-upload_time']
