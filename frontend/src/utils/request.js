@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', // Django 地址
+  baseURL: import.meta.env.VITE_API_URL || '/api', // Django 地址
   timeout: 5000
 })
 
