@@ -1,49 +1,66 @@
 services:
+  # 数据库服务
   db:
     image: mysql:8.0
-    container_name: image_db_container
+    container_name: img_manager_db_container
     restart: always
     environment:
-      MYSQL_DATABASE: image_db
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: img_manager
+      MYSQL_ROOT_PASSWORD: 123456
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - app-network
+      - app_network
+    # 健康检查，确保数据库启动完成
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
+  # 后端服务
   backend:
     build: ./backend
-    container_name: image_backend_container
+    container_name: image_backend
     restart: always
-    environment:
-      DB_HOST: db        # 指向 db 服务
-      DB_NAME: image_db
-      DB_USER: root
-      DB_PASSWORD: root
-    volumes:
-      - ./backend/media:/app/media  # 挂载本地 media 目录，防止图片丢失
-      - ./backend/static:/app/static # 挂载静态资源
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      # 这里配置 Django 连接数据库的环境变量
+      # 注意：DB_HOST 必须是服务名 'db'
+      DB_HOST: db
+      DB_NAME: img_manager
+      DB_USER: root
+      DB_PASSWORD: 123456
+      DB_PORT: 3306
+      DJANGO_SECRET_KEY:
+      DEBUG: 'False'  # 生产环境关闭 Debug
+      ALLOWED_HOSTS: '*' # 允许 Nginx 访问
+    volumes:
+      - media_volume:/app/media  # 挂载 Media 目录以持久化图片
+      - static_volume:/app/static # 挂载静态文件
     networks:
-      - app-network
+      - app_network
 
+  # 前端服务 (作为入口)
   frontend:
     build: ./frontend
-    container_name: image_frontend_container
+    container_name: image_frontend
     restart: always
     ports:
-      - "8080:80"  # 将宿主机的 8080 映射到容器的 80
-    volumes:
-      - ./backend/media:/app/media  # Nginx 需要读取这个目录来展示图片
+      - "80:80"  # 浏览器访问 localhost:80
     depends_on:
       - backend
     networks:
-      - app-network
+      - app_network
 
+# 定义持久化卷
 volumes:
   db_data:
+  media_volume:
+  static_volume:
 
+# 定义网络
 networks:
-  app-network:
+  app_network:
     driver: bridge

@@ -4,6 +4,28 @@
     <h1 class="text-2xl font-bold mb-6">上传图片</h1>
     
     <el-form label-position="top">
+      <!-- 相册选择 -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">选择或创建相册</label>
+        <el-select
+          v-model="selectedCategory"
+          filterable
+          allow-create
+          default-first-option
+          placeholder="请选择相册，或直接输入名称新建"
+          class="w-full"
+          size="large"
+          @change="handleCategoryChange"
+        >
+          <el-option
+            v-for="item in categories"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+          />
+        </el-select>
+      </div>
+      
       <!-- 图片选择 -->
       <el-form-item label="选择图片">
         <el-upload
@@ -47,20 +69,42 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { UploadFilled } from '@element-plus/icons-vue'
-import { uploadImage } from '@/api/image'
+import { uploadImage, getCategories } from '@/api/image' // 引入 getCategories
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const uploadRef = ref(null)
+
+// 表单数据
 const file = ref(null)
-const tags = ref([])
+const tags = ref([]) // 数组，例如 ['风景', '夏天']
+const selectedCategory = ref('') // 字符串，例如 '我的生活'
 const isPublic = ref(true)
+const categories = ref([]) // 后端返回的列表
+
 const uploading = ref(false)
+
+// 获取已有的相册列表
+onMounted(async () => {
+  try {
+    const res = await getCategories()
+    categories.value = Array.isArray(res.data) ? res.data : (res.data.results || [])
+  } catch (e) {
+    console.error('获取相册失败', e)
+  }
+})
 
 const handleFileChange = (uploadFile) => {
   file.value = uploadFile.raw
+}
+
+const handleExceed = (files) => {
+  uploadRef.value.clearFiles()
+  const file = files[0]
+  uploadRef.value.handleStart(file)
 }
 
 const submitUpload = async () => {
@@ -68,10 +112,18 @@ const submitUpload = async () => {
   
   uploading.value = true
   const formData = new FormData()
+  
   formData.append('img_url', file.value)
-  formData.append('is_public', isPublic.value)
-  // 必须将数组中的每个标签单独 append，后端用 ListField 处理
-  // 或者如果不生效，可以在后端改为接收逗号分隔字符串
+  // Convert boolean to string for FormData (Python handles 'true'/'false' usually, but '1'/'0' or proper parsing is safer)
+  // Django's default BooleanField handles JS 'true'/'false' strings well in FormData
+  formData.append('is_public', isPublic.value ? 'True' : 'False')
+  
+  // 发送相册名称
+  if (selectedCategory.value) {
+    formData.append('upload_category', selectedCategory.value)
+  }
+
+  // 发送标签列表
   tags.value.forEach(tag => {
     formData.append('tag_names', tag) 
   })
@@ -81,7 +133,8 @@ const submitUpload = async () => {
     ElMessage.success('上传成功')
     router.push('/')
   } catch (error) {
-    ElMessage.error('上传失败')
+    console.error(error)
+    ElMessage.error('上传失败: ' + (error.response?.data?.detail || '未知错误'))
   } finally {
     uploading.value = false
   }
