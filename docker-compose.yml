@@ -1,45 +1,49 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
+    container_name: image_db_container
+    restart: always
     environment:
-      MYSQL_DATABASE: photomanager
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_USER: zju_user
-      MYSQL_PASSWORD: zju_password
+      MYSQL_DATABASE: image_db
+      MYSQL_ROOT_PASSWORD: root
     volumes:
       - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - app-network
 
   backend:
     build: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
+    container_name: image_backend_container
+    restart: always
+    environment:
+      DB_HOST: db        # 指向 db 服务
+      DB_NAME: image_db
+      DB_USER: root
+      DB_PASSWORD: root
     volumes:
-      - ./backend:/app
-      - media_volume:/app/media
-    ports:
-      - "8000:8000"
+      - ./backend/media:/app/media  # 挂载本地 media 目录，防止图片丢失
+      - ./backend/static:/app/static # 挂载静态资源
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_NAME=photomanager
-      - DB_USER=zju_user
-      - DB_PASSWORD=zju_password
+    networks:
+      - app-network
 
   frontend:
     build: ./frontend
+    container_name: image_frontend_container
+    restart: always
     ports:
-      - "5173:5173"
+      - "8080:80"  # 将宿主机的 8080 映射到容器的 80
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./backend/media:/app/media  # Nginx 需要读取这个目录来展示图片
     depends_on:
       - backend
+    networks:
+      - app-network
 
 volumes:
   db_data:
-  media_volume:
+
+networks:
+  app-network:
+    driver: bridge

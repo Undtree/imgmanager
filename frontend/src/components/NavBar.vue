@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-50 bg-white border-b shadow-sm">
+  <header class="sticky top-0 z-50 bg-white border-b shadow-sm transition-colors duration-300 dark:bg-gray-800 dark:border-gray-700">
     <div class="container mx-auto px-4 h-16 flex items-center justify-between">
       <!-- Logo -->
       <router-link to="/" class="text-xl font-bold text-blue-600">
@@ -8,6 +8,31 @@
 
       <!-- PC端 搜索 & 菜单 -->
       <div class="hidden md:flex items-center space-x-4 flex-1 justify-end">
+        <!-- 主题切换下拉菜单 -->
+        <el-dropdown @command="handleThemeCommand">
+          <el-button circle plain>
+            <el-icon>
+              <!-- 根据当前状态显示不同图标 -->
+              <Moon v-if="themeStore.theme === 'dark'" />
+              <Sunny v-else-if="themeStore.theme === 'light'" />
+              <Monitor v-else />
+            </el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="light" :class="{ 'text-blue-500': themeStore.theme === 'light' }">
+                <el-icon><Sunny /></el-icon> 日间模式
+              </el-dropdown-item>
+              <el-dropdown-item command="dark" :class="{ 'text-blue-500': themeStore.theme === 'dark' }">
+                <el-icon><Moon /></el-icon> 夜间模式
+              </el-dropdown-item>
+              <el-dropdown-item command="auto" :class="{ 'text-blue-500': themeStore.theme === 'auto' }">
+                <el-icon><Monitor /></el-icon> 跟随系统
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
         <el-input 
           v-model="searchKeyword" 
           placeholder="搜索标签、地点..." 
@@ -60,12 +85,19 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Search, ArrowDown, Menu } from '@element-plus/icons-vue'
+import { useThemeStore } from '@/stores/themes'
+import { Search, ArrowDown, Menu, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 const searchKeyword = ref('')
 const mobileMenuOpen = ref(false)
+
+// 处理下拉菜单点击
+const handleThemeCommand = (command) => {
+  themeStore.setTheme(command)
+}
 
 const handleSearch = () => {
   router.push({ path: '/', query: { search: searchKeyword.value } })
