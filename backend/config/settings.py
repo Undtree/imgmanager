@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-*s-*9+k)f4-yp*0$4+5tco-iv837p0s4b3_vp+wu#gdu=pn&ax
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_fliters',
     'rest_framework',
     'corsheaders',      # 跨域
     'apps.users',       # 自定义 App
@@ -82,10 +83,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'img_manager',
-        'USER': 'root',
-        'PASSWORD': '123456',
-        'HOST': 'localhost',
+        'NAME': os.environ.get('DB_NAME', 'img_manager'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '123456'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': '3306',
     }
 }
@@ -125,7 +126,7 @@ USE_TZ = True
 # Media files (Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-MEDIA_URL = '/media/'
+STATIC_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # 跨域配置 (允许前端访问)
@@ -136,6 +137,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
 # 自定义用户模型指向
