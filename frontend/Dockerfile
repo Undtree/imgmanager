@@ -5,7 +5,8 @@ WORKDIR /app
 
 # 单独复制 package.json 以利用 Docker 缓存
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 # 复制源代码并构建
 COPY . .

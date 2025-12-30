@@ -29,6 +29,13 @@ export function updateImage(id, formData) {
   })
 }
 
+export function analyzeImage(formData) {
+  return request.post('/images/analyze/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000
+  })
+}
+
 export function deleteImage(id) {
   return request.delete(`/images/${id}/`)
 }

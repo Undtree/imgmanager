@@ -18,7 +18,7 @@ const router = createRouter({
     { 
       path: '/login', 
       component: Login,
-      meta: { guestOnly: false }
+      meta: { guestOnly: false, title: '登录' }
     },
     { 
       path: '/detail/:id', 
@@ -28,7 +28,7 @@ const router = createRouter({
     { 
       path: '/upload', 
       component: Upload, 
-      meta: { requiresAuth: true } 
+      meta: { requiresAuth: true, title: '上传图片' } 
     },
     { 
       path: '/edit/:id', 
@@ -40,6 +40,13 @@ const router = createRouter({
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
+  const appTitle = 'ImageManager' // 你的网站总名称
+  if (to.meta.title) {
+    document.title = `${to.meta.title} - ${appTitle}`
+  } else {
+    document.title = appTitle
+  }
+
   const userStore = useUserStore()
   const isAuthenticated = !!userStore.token
 
