@@ -7,7 +7,7 @@ class User(AbstractUser):
     
     class Meta:
         db_table = 'tb_user'  # 严格对应报告表名
-        verbose_name = '用户'
+        verbose_name = 'User'
 
     def __str__(self):
         return self.username

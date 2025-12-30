@@ -67,6 +67,9 @@ class ImageViewSet(viewsets.ModelViewSet):
         
         # 2. 生成缩略图
         thumb_file = make_thumbnail(img_file)
+
+        exif_data.pop('width', None)
+        exif_data.pop('height', None)
         
         # 3. 保存
         serializer.save(
