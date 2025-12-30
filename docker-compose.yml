@@ -51,6 +51,9 @@ services:
       - "80:80"  # 浏览器访问 localhost:80
     depends_on:
       - backend
+    volumes:
+      - media_volume:/usr/share/nginx/html/media
+      - static_volume:/usr/share/nginx/html/static
     networks:
       - app_network
 

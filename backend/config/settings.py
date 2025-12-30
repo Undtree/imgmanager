@@ -126,7 +126,8 @@ USE_TZ = True
 # Media files (Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = '/media/'
+MEDIA_URL = '/media/'
+STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
@@ -143,3 +144,6 @@ REST_FRAMEWORK = {
 
 # 自定义用户模型指向
 AUTH_USER_MODEL = 'users.User'
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
