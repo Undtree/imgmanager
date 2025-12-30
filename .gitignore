@@ -35,18 +35,13 @@ db.sqlite3
 backend/staticfiles/
 
 # ==========================
-# 用户上传的媒体文件 (关键！)
+# 用户上传的媒体文件
 # ==========================
 # 忽略 media 文件夹下的所有内容，因为这是用户上传的图片
 backend/media/*
 
-# 但是！保留 media 目录结构本身 (建议在 backend/media 下放一个空的 .gitkeep 文件)
-# 这样别人 clone 项目时会有 media 文件夹，但里面是空的
+# 保留 media 目录结构本身
 !backend/media/.gitkeep
-
-# 如果你有具体的子文件夹结构不想提交，也可以这样写：
-backend/media/uploads/*
-backend/media/thumbs/*
 
 # ==========================
 # Frontend (Vue / Node.js)
