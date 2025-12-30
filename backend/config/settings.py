@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_fliters',
+    'django_filters',
     'rest_framework',
     'corsheaders',      # 跨域
     'apps.users',       # 自定义 App

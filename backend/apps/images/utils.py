@@ -1,5 +1,6 @@
 from PIL import Image as PilImage
 from PIL.ExifTags import TAGS, GPSTAGS
+from datetime import datetime
 import io
 import os
 from django.core.files.base import ContentFile
@@ -18,9 +19,9 @@ def get_exif_data(image_file):
     img = PilImage.open(image_file)
     exif_data = {}
     
-    # 1. 基础信息：宽高
-    exif_data['width'] = img.width
-    exif_data['height'] = img.height
+    # 1. 基础信息：宽高，不需要存进 EXIF
+    # exif_data['width'] = img.width
+    # exif_data['height'] = img.height
     
     # 2. 尝试获取 EXIF 数据 (PNG 等格式可能没有)
     info = img._getexif()
@@ -29,16 +30,26 @@ def get_exif_data(image_file):
             decoded = TAGS.get(tag, tag)
             
             if decoded == "DateTimeOriginal":
-                # 格式通常是 YYYY:MM:DD HH:MM:SS
-                exif_data['shoot_time'] = value 
+                # 格式通常是 YYYY:MM:DD HH:MM:SS，需要转换为 YYYY-MM-DD HH:MM:SS
+                try:
+                    # 强制转为字符串并清洗：去除首尾空格和不可见的 \x00 空字符
+                    date_str = str(value).strip().replace('\x00', '')
+                    
+                    # 尝试将 EXIF 格式转为 Python datetime 对象
+                    exif_data['shoot_time'] = datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    # 如果解析失败就设为 None，防止报错
+                    exif_data['shoot_time'] = None
             elif decoded == "Model":
-                exif_data['camera_model'] = value
+                exif_data['camera_model'] = str(value).strip()
+            elif decoded == "ISOSpeedRatings":
+                exif_data['iso'] = value
             elif decoded == "GPSInfo":
                 gps_data = {}
                 for t in value:
                     sub_decoded = GPSTAGS.get(t, t)
                     gps_data[sub_decoded] = value[t]
-                
+            
                 # 解析经纬度
                 if 'GPSLatitude' in gps_data and 'GPSLongitude' in gps_data:
                     try:
