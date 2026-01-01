@@ -33,7 +33,7 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans SC', Roboto, 'Helvetica Neue', Arial, sans-serif;
   
-  /* [关键修改] 使用变量，并添加过渡动画 */
+  /* 使用变量，并添加过渡动画 */
   background-color: var(--app-bg-color);
   transition: background-color 0.3s ease;
 }

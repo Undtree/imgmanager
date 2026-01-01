@@ -87,7 +87,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', '123456'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': '3306',
+        'PORT': os.environ.get('DB_PORT', '3306'),
     }
 }
 
@@ -128,6 +128,7 @@ USE_TZ = True
 
 STATIC_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # 跨域配置 (允许前端访问)
 CORS_ALLOW_ALL_ORIGINS = True 

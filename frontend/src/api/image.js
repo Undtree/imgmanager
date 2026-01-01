@@ -8,6 +8,14 @@ export function getImageDetail(id) {
   return request.get(`/images/${id}/`)
 }
 
+export function getCategories() {
+  return request.get('/categories/')
+}
+
+export function createCategory(name) {
+  return request.post('/categories/', { name })
+}
+
 export function uploadImage(formData) {
   return request.post('/images/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
