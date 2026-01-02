@@ -3,6 +3,14 @@
     <NavBar />
     
     <div class="container mx-auto px-4 py-6">
+      <!-- 顶部切换 -->
+      <div class="flex justify-center mb-6">
+        <el-radio-group v-model="activeTab" size="large" @change="handleTabChange">
+          <el-radio-button label="my">我的照片</el-radio-button>
+          <el-radio-button label="explore">漫游广场</el-radio-button>
+        </el-radio-group>
+      </div>
+      
       <!-- 加载状态 -->
       <div v-if="loading" class="py-20 flex justify-center">
         <el-skeleton animated :count="3" class="w-full grid grid-cols-3 gap-4" />
@@ -40,8 +48,21 @@ import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const activeTab = ref('my') 
 const images = ref([]) // 初始化为空数组
 const loading = ref(false)
+
+const getFullUrl = (url) => {
+  if (!url) return ''
+  // 如果已经是完整链接 (http开头)，直接返回
+  if (url.startsWith('http')) return url
+  // 如果已经包含了 /media/，直接返回
+  if (url.startsWith('/media/')) return url
+  // 否则，手动补上 /media/ 前缀
+  // 注意：如果你的 url 开头有 / (如 /thumbs/...)，要处理一下
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url
+  return `/media/${cleanUrl}`
+}
 
 const loadData = async () => {
   loading.value = true
@@ -50,12 +71,16 @@ const loadData = async () => {
       search: route.query.search,
       ordering: '-upload_time'
     }
+
+    if (activeTab.value === 'my') {
+      params.only_my = true
+    }
+
     const res = await getImages(params)
     
-    // === 修复开始 ===
     let rawData = []
 
-    // 1. 判断后端返回格式
+    // 判断后端返回格式
     if (Array.isArray(res.data)) {
       // 情况A: 后端直接返回数组 (你的当前情况)
       rawData = res.data
@@ -64,22 +89,24 @@ const loadData = async () => {
       rawData = res.data.results
     }
     
-    // 2. 处理图片数据 (确保 URL 格式正确，防止 null 报错)
+    // 处理图片数据 (确保 URL 格式正确，防止 null 报错)
     images.value = rawData.map(img => ({
         ...img,
-        // 如果 tags 是 null，给一个空数组防止 .length 报错
         tags: img.tags || [], 
-        // 确保 URL 存在
-        img_url: img.img_url || '',
-        thumb_url: img.thumb_url || img.img_url || ''
+        // [修改] 使用 getFullUrl 处理路径
+        img_url: getFullUrl(img.img_url),
+        thumb_url: getFullUrl(img.thumb_url || img.img_url)
     }))
-    // === 修复结束 ===
 
   } catch (error) {
     console.error("加载图片失败:", error)
   } finally {
     loading.value = false
   }
+}
+
+const handleTabChange = () => {
+  loadData()
 }
 
 onMounted(loadData)

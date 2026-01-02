@@ -1,9 +1,21 @@
 <script setup>
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useThemeStore } from '@/stores/themes'
+import { useUserStore } from '@/stores/user'
 
 const themeStore = useThemeStore()
+const userStore = useUserStore()
+
 themeStore.initTheme()
+
+onMounted(async () => {
+  if (userStore.token) {
+    // 调用 fetchUserInfo，如果 Token 失效，
+    // Axios 拦截器会捕获 401 并自动执行 logout + 跳转
+    await userStore.fetchUserInfo()
+  }
+})
 </script>
 
 <template>

@@ -16,14 +16,22 @@ def get_exif_data(image_file):
     """
     提取图片的宽、高以及EXIF信息（拍摄时间、相机型号、GPS经纬度）
     """
-    img = PilImage.open(image_file)
+    image_file.seek(0)
+
+    try:
+        img = PilImage.open(image_file) 
+        img.verify() # 验证文件完整性，但这可能会移动指针
+        
+        # verify() 后需要重新 open 才能读取数据，Pillow 的特性
+        image_file.seek(0)
+        img = PilImage.open(image_file)
+    except Exception:
+        # 如果不是图片，直接返回
+        return {}, 0, 0
+
     exif_data = {}
     
-    # 1. 基础信息：宽高，不需要存进 EXIF
-    # exif_data['width'] = img.width
-    # exif_data['height'] = img.height
-    
-    # 2. 尝试获取 EXIF 数据 (PNG 等格式可能没有)
+    # 尝试获取 EXIF 数据 (PNG 等格式可能没有)
     info = img._getexif()
     if info:
         for tag, value in info.items():
@@ -75,24 +83,29 @@ def make_thumbnail(image_file, size=(300, 300)):
     :param size: 缩略图最大尺寸 (宽, 高)
     :return: Django ContentFile 对象
     """
-    img = PilImage.open(image_file)
+    image_file.seek(0)
     
-    # 如果图片是 RGBA (如 PNG)，转换为 RGB，否则保存为 JPEG 会报错
-    if img.mode in ('RGBA', 'P'):
-        img = img.convert('RGB')
-    
-    # 保持比例缩放
-    img.thumbnail(size)
-    
-    # 将图片保存到内存中
-    thumb_io = io.BytesIO()
-    img.save(thumb_io, 'JPEG', quality=85)
-    
-    # 生成文件名 (例如: original_thumb.jpg)
-    name = image_file.name
-    if not name:
-        name = 'image.jpg'
-    base_name, _ = os.path.splitext(name)
-    thumb_name = f"{base_name}_thumb.jpg"
-    
-    return ContentFile(thumb_io.getvalue(), name=thumb_name)
+    try: 
+        img = PilImage.open(image_file)
+        # 如果图片是 RGBA (如 PNG)，转换为 RGB，否则保存为 JPEG 会报错
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        # 保持比例缩放
+        img.thumbnail(size)
+
+        # 将图片保存到内存中
+        thumb_io = io.BytesIO()
+        img.save(thumb_io, 'JPEG', quality=85)
+
+        # 生成文件名 (例如: original_thumb.jpg)
+        name = image_file.name
+        if not name:
+            name = 'image.jpg'
+        base_name, _ = os.path.splitext(name)
+        thumb_name = f"{base_name}_thumb.jpg"
+
+        return ContentFile(thumb_io.getvalue(), name=thumb_name)
+    except Exception as e:
+        print(f"缩略图生成失败: {e}")
+        return None
