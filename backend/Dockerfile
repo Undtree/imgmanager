@@ -20,9 +20,13 @@ RUN apt-get update && apt-get install -y \
 
 # 复制依赖文件并安装
 COPY requirements.txt /app/
-RUN pip install --upgrade pip && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    # 先装大块头 PyTorch (利用缓存)
+    pip install torch && \
+    # 再装其他
     pip install -r requirements.txt && \
-    pip install gunicorn  # 生产环境推荐使用 gunicorn 运行
+    pip install gunicorn
 
 # 复制项目代码
 COPY . /app/

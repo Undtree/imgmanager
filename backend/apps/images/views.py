@@ -1,10 +1,12 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 from .models import Image, Tag, Category
 from .serializers import ImageSerializer, TagSerializer, CategorySerializer
 from .utils import get_exif_data, make_thumbnail
+from .ai_utils import classify_image
 from PIL import Image as PilImage 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -78,12 +80,12 @@ class ImageViewSet(viewsets.ModelViewSet):
         exif_data.pop('width', None)
         exif_data.pop('height', None)
         
-        # [重要] 最后一次重置指针，为了 Django 的保存操作
+        # 最后一次重置指针，为了 Django 的保存操作
         if img_file:
             img_file.seek(0)
 
-        # [重要] 显式指定 img_url=img_file，确保使用的是当前这个指针归零的对象
-        serializer.save(
+        # 显式指定 img_url=img_file，确保使用的是当前这个指针归零的对象
+        instance = serializer.save(
             user=self.request.user,
             img_url=img_file, 
             width=width,
@@ -92,6 +94,21 @@ class ImageViewSet(viewsets.ModelViewSet):
             thumb_url=thumb_file,
             **exif_data
         )
+
+    @action(detail=False, methods=['post'], url_path='analyze')
+    def analyze(self, request):
+        """
+        接收图片，返回 AI 识别建议的标签
+        URL: POST /api/images/analyze/
+        """
+        img_file = request.FILES.get('img_url') # 前端传文件的字段名
+        if not img_file:
+            return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 调用本地 AI
+        tags = classify_image(img_file)
+        
+        return Response({"suggested_tags": tags})
 
     def perform_update(self, serializer):
         new_img = self.request.data.get('img_url', None)
@@ -120,3 +137,55 @@ class ImageViewSet(viewsets.ModelViewSet):
              )
         else:
             serializer.save()
+
+class MCPView(APIView):
+    """
+    MCP 协议接口
+    URL: GET /api/mcp/search?q=...
+    """
+    permission_classes = [permissions.AllowAny] # 允许外部 Agent 访问
+
+    def get(self, request):
+        query = request.query_params.get('q', '')
+        
+        # 简单的分词逻辑：把 "海边的照片" -> ["海边", "照片"]
+        # 在没有 GPT API 的情况下，这是最经济的办法
+        keywords = query.split() 
+        
+        # 构建查询：标签包含关键词 OR 描述包含关键词 OR 地点包含
+        q_obj = Q()
+        for k in keywords:
+            if len(k) > 1: # 忽略单字
+                q_obj |= Q(tags__name__icontains=k)
+                q_obj |= Q(camera_model__icontains=k)
+                q_obj |= Q(location__icontains=k)
+
+        images = Image.objects.filter(q_obj).distinct()[:10] # 最多返回10条
+
+        # 构造符合 MCP/Agent 阅读的 JSON 格式
+        results = []
+        for img in images:
+            # 获取所有标签名
+            tag_names = ",".join([t.name for t in img.tags.all()])
+            
+            # 构造给 AI 看的描述文本
+            desc = (
+                f"图片ID: {img.id}, "
+                f"拍摄于: {img.shoot_time or '未知时间'}, "
+                f"地点: {img.location or '未知地点'}, "
+                f"标签: {tag_names}, "
+                f"相机: {img.camera_model}"
+            )
+            
+            results.append({
+                "id": img.id,
+                # 拼接完整的图片 URL
+                "url": request.build_absolute_uri(img.img_url.url),
+                "description": desc,
+                "score": 1.0 # 模拟评分
+            })
+
+        return Response({
+            "status": "success",
+            "results": results
+        })

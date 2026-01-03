@@ -6,7 +6,7 @@ import { ElMessage } from 'element-plus'
 // 创建 axios 实例
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api', // Django 地址
-  timeout: 10000 // 请求超时时间
+  timeout: 15000 // 请求超时时间
 })
 
 // === 请求拦截器 ===

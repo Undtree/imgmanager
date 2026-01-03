@@ -22,6 +22,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.users.views import RegisterView, UserInfoView # 记得在 views.py 加 UserInfoView
 from rest_framework.routers import DefaultRouter
 from apps.images.views import ImageViewSet, TagViewSet, CategoryViewSet
+from apps.images.views import MCPView
 
 router = DefaultRouter()
 router.register(r'images', ImageViewSet, basename='image')
@@ -35,4 +36,5 @@ urlpatterns = [
     path('api/auth/refresh/', TokenRefreshView.as_view()),
     path('api/auth/me/', UserInfoView.as_view()), # 获取当前用户信息
     path('api/', include(router.urls)),
+    path('api/mcp/search/',MCPView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -47,18 +47,27 @@ class ImageSerializer(serializers.ModelSerializer):
         return image
 
     def update(self, instance, validated_data):
+        cat_name = validated_data.pop('upload_category', None)
         tag_names = validated_data.pop('tag_names', None)
         
         # 标准更新
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.save()
+
+        # 更新相册
+        if cat_name is not None:
+            if cat_name == '':
+                instance.category = None
+            else:
+                category, _ = Category.objects.get_or_create(name=cat_name)
+                instance.category = category
         
         # 更新标签 (覆盖式)
         if tag_names is not None:
             instance.tags.clear()
             for name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=name)
+                tag, _ = Tag.objects.get_or_create(name=name)
                 instance.tags.add(tag)
                 
+        instance.save()
         return instance

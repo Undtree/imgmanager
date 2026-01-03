@@ -1,93 +1,292 @@
 <template>
-  <div class="h-screen flex flex-col bg-gray-900">
+  <div class="h-screen flex flex-col bg-[#141414] text-white overflow-hidden">
     <!-- 顶部工具栏 -->
-    <div class="h-14 bg-black flex justify-between items-center px-4 text-white">
-      <el-button type="text" @click="$router.back()" class="text-white">取消</el-button>
-      <span>编辑图片</span>
-      <el-button type="primary" @click="saveEdit" :loading="saving">保存覆盖</el-button>
-    </div>
-
-    <!-- 中间画布区域 -->
-    <div class="flex-1 overflow-hidden relative bg-black flex items-center justify-center">
-      <img ref="imageRef" :src="imgUrl" class="max-w-full block" v-if="imgUrl"/>
-    </div>
-
-    <!-- 底部控制栏 -->
-    <div class="h-40 bg-gray-800 p-4 text-white">
-      <div class="flex space-x-4 mb-4 justify-center">
-        <el-button circle @click="rotate(-90)">↺</el-button>
-        <el-button circle @click="rotate(90)">↻</el-button>
-        <el-button round @click="setAspectRatio(16/9)">16:9</el-button>
-        <el-button round @click="setAspectRatio(4/3)">4:3</el-button>
-        <el-button round @click="setAspectRatio(1)">1:1</el-button>
-        <el-button round @click="setAspectRatio(NaN)">自由</el-button>
+    <div class="h-16 bg-[#1f1f1f] flex justify-between items-center px-6 shrink-0 border-b border-[#333]">
+      <div class="flex items-center space-x-4">
+        <el-button link @click="$router.back()" class="!text-gray-400 hover:!text-white">
+          <el-icon class="mr-1"><ArrowLeft /></el-icon> 返回
+        </el-button>
+        <span class="text-lg font-medium tracking-wide">编辑工作台</span>
       </div>
+      <el-button type="primary" size="large" @click="saveEdit" :loading="saving" class="!px-8">
+        保存更改
+      </el-button>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
       
-      <!-- 滤镜 (模拟) -->
-      <div class="text-center text-sm text-gray-400">
-        滤镜功能仅做演示，后端保存为裁剪后结果
+      <!-- 左侧：画布区域 -->
+      <div class="flex-1 flex flex-col relative bg-[#141414]">
+        <!-- 图片容器 -->
+        <div class="flex-1 p-8 flex items-center justify-center overflow-hidden">
+           <!-- 
+             图片本身不需要加 bg-checkered。
+             CropperJS 会初始化并把图片包裹在一个容器里，
+             我们只需要确保 Cropper 的 CSS 正确加载，它自带透明背景样式。
+           -->
+           <img ref="imageRef" :src="imgUrl" class="max-w-full hidden" v-if="imgUrl"/>
+        </div>
+        
+        <!-- 底部悬浮工具栏 -->
+        <div class="h-20 bg-[#1f1f1f] border-t border-[#333] flex items-center justify-center space-x-6 shrink-0 z-10">
+          <el-tooltip content="向左旋转" placement="top">
+            <el-button circle size="large" @click="rotate(-90)" class="tool-btn"><el-icon><RefreshLeft /></el-icon></el-button>
+          </el-tooltip>
+          <el-tooltip content="向右旋转" placement="top">
+            <el-button circle size="large" @click="rotate(90)" class="tool-btn"><el-icon><RefreshRight /></el-icon></el-button>
+          </el-tooltip>
+          
+          <div class="w-px h-8 bg-[#444] mx-2"></div>
+          
+          <span class="text-xs text-gray-500 font-bold mr-2">比例</span>
+          <el-radio-group v-model="aspectRatio" size="small" @change="setAspectRatio" class="ratio-group">
+            <el-radio-button :label="NaN">自由</el-radio-button>
+            <el-radio-button :label="1">1:1</el-radio-button>
+            <el-radio-button :label="4/3">4:3</el-radio-button>
+            <el-radio-button :label="16/9">16:9</el-radio-button>
+          </el-radio-group>
+        </div>
+      </div>
+
+      <!-- 右侧：属性编辑 (侧边栏) -->
+      <div class="w-96 bg-[#1f1f1f] border-l border-[#333] flex flex-col shrink-0">
+        <div class="p-6 border-b border-[#333]">
+          <h3 class="text-base font-bold text-white">属性信息</h3>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-8">
+          <el-form label-position="top" class="dark-form">
+            
+            <!-- 所属相册 -->
+            <el-form-item label="所属相册">
+              <el-select
+                v-model="form.category"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="搜索或创建相册"
+                class="w-full"
+                size="large"
+              >
+                <el-option
+                  v-for="item in categories"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.name"
+                />
+              </el-select>
+            </el-form-item>
+
+            <!-- 标签 -->
+            <el-form-item label="标签">
+              <el-select
+                v-model="form.tags"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                :reserve-keyword="false"
+                placeholder="输入标签并回车"
+                class="w-full"
+                size="large"
+              >
+                 <!-- 用户输入创建 -->
+              </el-select>
+            </el-form-item>
+
+            <!-- 可见性 -->
+            <el-form-item label="隐私设置">
+              <div class="bg-[#2a2a2a] rounded-lg p-4 flex items-center justify-between border border-[#333]">
+                <div class="flex items-center">
+                  <el-icon class="mr-2 text-gray-400" size="16"><component :is="form.is_public ? 'View' : 'Hide'" /></el-icon>
+                  <span class="text-sm text-gray-200">{{ form.is_public ? '公开可见' : '私密图片' }}</span>
+                </div>
+                <el-switch 
+                  v-model="form.is_public" 
+                  style="--el-switch-on-color: #10b981;"
+                />
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
-import { getImageDetail, updateImage } from '@/api/image'
+import { getImageDetail, updateImage, getCategories } from '@/api/image'
 import { ElMessage } from 'element-plus'
+import { ArrowLeft, RefreshLeft, RefreshRight, View, Hide } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+
+// UI State
 const imageRef = ref(null)
 const imgUrl = ref('')
 const saving = ref(false)
+const aspectRatio = ref(NaN)
 let cropper = null
 
-onMounted(async () => {
-  // 1. 获取原图链接
-  const res = await getImageDetail(route.params.id)
-  imgUrl.value = res.data.img_url // 注意：跨域图片可能会导致 Canvas 污染，后端需配 CORS
-
-  // 2. 初始化 Cropper
-  // 必须等待 DOM 更新且图片加载完成，简单起见用 setTimeout 或 @load
-  setTimeout(() => {
-    cropper = new Cropper(imageRef.value, {
-      viewMode: 1,
-      dragMode: 'move',
-      background: false,
-    })
-  }, 200)
+// Data State
+const categories = ref([])
+const form = reactive({
+  category: '',
+  tags: [],
+  is_public: true
 })
 
-const rotate = (deg) => cropper?.rotate(deg)
-const setAspectRatio = (ratio) => cropper?.setAspectRatio(ratio)
+onMounted(async () => {
+  const id = route.params.id
+  try {
+    const [detailRes, catRes] = await Promise.all([
+      getImageDetail(id),
+      getCategories()
+    ])
 
+    // 填充数据
+    const data = detailRes.data
+    imgUrl.value = data.img_url
+    form.category = data.category_name || ''
+    if (data.tags && data.tags.length > 0) {
+      form.tags = data.tags.map(t => (typeof t === 'object' ? t.name : t))
+    } else {
+      form.tags = []
+    }
+    form.is_public = data.is_public
+
+    categories.value = Array.isArray(catRes.data) ? catRes.data : (catRes.data.results || [])
+
+    // 初始化 Cropper
+    setTimeout(() => {
+      if (imageRef.value) {
+        cropper = new Cropper(imageRef.value, {
+          viewMode: 1, // 限制裁剪框在图片内
+          dragMode: 'move', // 允许拖动图片
+          background: true, // 显示自带的棋盘格背景
+          autoCropArea: 0.9,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+        })
+      }
+    }, 200)
+
+  } catch (e) {
+    ElMessage.error('加载失败')
+    router.push('/')
+  }
+})
+
+// Cropper Actions
+const rotate = (deg) => cropper?.rotate(deg)
+const setAspectRatio = (ratio) => {
+  aspectRatio.value = ratio
+  cropper?.setAspectRatio(ratio)
+}
+
+// Save
 const saveEdit = () => {
   if (!cropper) return
   saving.value = true
   
-  // 导出 Canvas
-  cropper.getCroppedCanvas().toBlob(async (blob) => {
-    const formData = new FormData()
-    // 覆盖原图字段 'img_url'，或者后端有专门接口
-    formData.append('img_url', blob, 'edited.jpg')
+  cropper.getCroppedCanvas({
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high',
+  }).toBlob(async (blob) => {
     
+    const formData = new FormData()
+    formData.append('img_url', blob, 'edited.jpg')
+    formData.append('is_public', form.is_public ? 'True' : 'False')
+    
+    if (form.category) formData.append('upload_category', form.category)
+    form.tags.forEach(tag => formData.append('tag_names', tag))
+
     try {
       await updateImage(route.params.id, formData)
-      ElMessage.success('编辑保存成功')
+      ElMessage.success('保存成功')
       router.back()
     } catch(e) {
       ElMessage.error('保存失败')
     } finally {
       saving.value = false
     }
-  }, 'image/jpeg', 0.8)
+  }, 'image/jpeg', 0.95)
 }
 
 onUnmounted(() => {
   cropper?.destroy()
 })
 </script>
+
+<style scoped>
+/* 定制 Cropper 样式 */
+:deep(.cropper-bg) {
+  background-image: linear-gradient(45deg, #eee 25%, transparent 25%),
+    linear-gradient(-45deg, #eee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eee 75%),
+    linear-gradient(-45deg, transparent 75%, #eee 75%);
+  background-size: 20px 20px;
+}
+
+/* 按钮样式微调 */
+.tool-btn {
+  background-color: #333 !important;
+  border: none !important;
+  color: #ccc !important;
+}
+.tool-btn:hover {
+  background-color: #444 !important;
+  color: white !important;
+}
+
+/* 强制覆盖 Element Plus 暗黑样式 */
+.dark-form :deep(.el-form-item__label) {
+  color: #a3a3a3 !important;
+  font-weight: 500;
+}
+
+/* 输入框深色适配 */
+.dark-form :deep(.el-input__wrapper),
+.dark-form :deep(.el-textarea__inner),
+.dark-form :deep(.el-select__wrapper) {
+  background-color: #2a2a2a !important;
+  border: 1px solid #333 !important;
+  box-shadow: none !important;
+  color: white !important;
+  transition: all 0.2s;
+}
+
+/* 聚焦时的高亮 */
+.dark-form :deep(.el-input__wrapper.is-focus),
+.dark-form :deep(.el-select__wrapper.is-focused) {
+  border-color: #409eff !important;
+}
+
+/* 选中项文字颜色 */
+.dark-form :deep(.el-select__selected-item) {
+  color: #fff !important;
+}
+
+/* Radio Button Group 定制 */
+.ratio-group :deep(.el-radio-button__inner) {
+  background-color: #2a2a2a;
+  border-color: #333;
+  color: #aaa;
+}
+.ratio-group :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background-color: #409eff;
+  border-color: #409eff;
+  color: white;
+  box-shadow: none;
+}
+</style>
