@@ -23,7 +23,7 @@ COPY requirements.txt /app/
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
     # 先装大块头 PyTorch (利用缓存)
-    pip install torch && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu121 && \
     # 再装其他
     pip install -r requirements.txt && \
     pip install gunicorn
@@ -36,4 +36,4 @@ EXPOSE 8000
 
 # 启动脚本：等待数据库 -> 迁移数据库 -> 启动服务
 # 这里使用 shell 形式，确保 migrate 成功后再启动
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 config.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --preload config.wsgi:application"]

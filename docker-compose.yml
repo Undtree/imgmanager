@@ -11,6 +11,7 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - app_network
+    command: --innodb-buffer-pool-size=128M
     # 健康检查，确保数据库启动完成
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
@@ -43,6 +44,13 @@ services:
       - ./backend/torch_cache:/root/.cache/torch # 持久化 AI 缓存
     networks:
       - app_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # 使用 1 张显卡
+              capabilities: [gpu]
 
   # 前端服务 (作为入口)
   frontend:

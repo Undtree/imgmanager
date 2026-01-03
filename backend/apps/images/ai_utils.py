@@ -2,13 +2,21 @@ from PIL import Image as PilImage
 from transformers import CLIPProcessor, CLIPModel
 import torch
 
-# 预加载模型 (全局单例，避免每次请求都重载)
-# weights='DEFAULT' 会自动下载预训练权重 (约 100MB)
+# 自动检测设备。由于我的缓存不够，求助显存。
+# 优先使用 CUDA (NVIDIA)，其次使用 MPS (Mac M1/M2/M3)，最后兜底 CPU
+device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+print(f"正在使用计算设备: {device}")
+
 model_id = "openai/clip-vit-base-patch32"
 
-model = CLIPModel.from_pretrained(model_id)
-processor = CLIPProcessor.from_pretrained(model_id)
-print("CLIP 模型加载完成")
+# 加载模型并立即移动到指定设备 (降低系统内存占用)
+try:
+    model = CLIPModel.from_pretrained(model_id).to(device)
+    processor = CLIPProcessor.from_pretrained(model_id)
+    print(f"CLIP 模型加载完成 (运行于 {device})")
+except Exception as e:
+    print(f"模型加载失败: {e}")
+    # 可以在这里做一些错误处理，比如回退到 CPU
 
 CANDIDATE_LABELS = {
     "landscape": "风景",
@@ -31,10 +39,6 @@ CANDIDATE_LABELS = {
 }
 english_labels = list(CANDIDATE_LABELS.keys())
 
-# 加载 ImageNet 类别标签 (英文)
-# 为了不依赖外部文件，这里简化处理，通常 torchvision 会自动处理类别 ID
-# 我们稍后直接用翻译库把英文结果转中文
-
 def classify_image(image_file):
     """
     使用 CLIP 进行匹配
@@ -42,8 +46,7 @@ def classify_image(image_file):
     try:
         img = PilImage.open(image_file)
         
-        # 处理输入：图片 + 我们定义的文本标签
-        # padding=True, truncation=True 是为了处理文本长度
+        # 处理输入：生成 Tensor
         inputs = processor(
             text=english_labels, 
             images=img, 
@@ -51,28 +54,29 @@ def classify_image(image_file):
             padding=True
         )
 
+        # inputs 是一个字典，包含 pixel_values 等，需要逐个移动
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
         with torch.no_grad():
             outputs = model(**inputs)
         
-        # 计算图片和每个文本标签的相似度 (logits_per_image)
+        # 计算相似度
         logits_per_image = outputs.logits_per_image
-        probs = logits_per_image.softmax(dim=1) # 转化为概率百分比
+        probs = logits_per_image.softmax(dim=1)
 
-        # 获取概率最高的 3 个标签
+        # 获取结果 (结果还在显卡上，转回 CPU 取值)
         values, indices = torch.topk(probs, 3)
         
         suggested_tags = []
         for i in range(3):
-            idx = indices[0][i].item()
+            idx = indices[0][i].item() # .item() 会自动从 GPU 取回数值到 CPU
             score = values[0][i].item()
             
-            # 只有置信度大于 10% 才展示，避免瞎猜
             if score > 0.1: 
                 en_tag = english_labels[idx]
                 cn_tag = CANDIDATE_LABELS[en_tag]
                 suggested_tags.append(cn_tag)
 
-        # 如果匹配度都很低，返回一个通用标签
         if not suggested_tags:
             return ["其他"]
 
@@ -80,4 +84,7 @@ def classify_image(image_file):
 
     except Exception as e:
         print(f"CLIP 分析出错: {e}")
+        # 如果显存爆了 (CUDA Out of memory)，可以在这里尝试清空缓存
+        if "CUDA out of memory" in str(e):
+            torch.cuda.empty_cache()
         return []
