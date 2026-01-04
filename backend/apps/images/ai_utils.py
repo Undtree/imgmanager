@@ -1,6 +1,7 @@
 from PIL import Image as PilImage
 from transformers import CLIPProcessor, CLIPModel
 import torch
+import os
 
 # 自动检测设备。由于我的缓存不够，求助显存。
 # 优先使用 CUDA (NVIDIA)，其次使用 MPS (Mac M1/M2/M3)，最后兜底 CPU
@@ -8,6 +9,15 @@ device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.i
 print(f"正在使用计算设备: {device}")
 
 model_id = "openai/clip-vit-base-patch32"
+
+offline_path = "/app/offline_model"
+
+if os.path.exists(os.path.join(offline_path, "config.json")):
+    print(f"使用本地离线模型: {offline_path}")
+    model_id = offline_path
+else:
+    print("未找到离线模型，尝试在线下载...")
+    model_id = "openai/clip-vit-base-patch32"
 
 # 加载模型并立即移动到指定设备 (降低系统内存占用)
 try:

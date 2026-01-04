@@ -151,7 +151,7 @@ const handleAIAnalyze = async () => {
 
   aiLoading.value = true
   const formData = new FormData()
-  formData.append('img_url', file.value) // 注意字段名要和后端对应
+  formData.append('img_url', file.value)
 
   try {
     const res = await analyzeImage(formData)

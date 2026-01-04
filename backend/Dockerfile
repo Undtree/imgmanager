@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     build-essential \
     libjpeg-dev \
+    libheif-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -36,4 +37,4 @@ EXPOSE 8000
 
 # 启动脚本：等待数据库 -> 迁移数据库 -> 启动服务
 # 这里使用 shell 形式，确保 migrate 成功后再启动
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --preload config.wsgi:application"]
+CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 --preload config.wsgi:application"]

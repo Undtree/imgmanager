@@ -7,6 +7,7 @@ Pillow
 pillow-heif
 django-filter
 django-cors-headers
+geopy
 torch           # AI 部分
 deep-translator
 transformers

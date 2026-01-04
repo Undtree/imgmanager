@@ -40,6 +40,7 @@ backend/staticfiles/
 # 忽略 media 文件夹下的所有内容，因为这是用户上传的图片
 backend/media/*
 backend/torch_cache/*
+local_clip_model/*
 
 # 保留 media 目录结构本身
 !backend/media/.gitkeep

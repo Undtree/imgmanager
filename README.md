@@ -17,7 +17,7 @@ B/S Software Course Assignment
 
 - Python 3.9+
 
-- Node.js 18+
+- Node.js 22+
 
 - MySQL 8.0
 
@@ -77,5 +77,5 @@ docker-compose up -d --build
 
 !!! 有关 HF_TOKEN:
 
-    由于 HF 访问限制，公开仓库默认不允许上传个人 token 。这里请您自己在 Hugging Face 上申请 token 。
+    由于安全限制，公开仓库默认不允许上传个人 token 。这里请您自己在 Hugging Face 上申请 token 。没有 token 也可以使用，但可能会被限流。
 

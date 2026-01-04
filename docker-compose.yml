@@ -43,6 +43,7 @@ services:
       - media_volume:/app/media  # 挂载 Media 目录以持久化图片
       - static_volume:/app/static # 挂载静态文件
       - ./backend/torch_cache:/root/.cache/torch # 持久化 AI 缓存
+      - ./local_clip_model:/app/offline_model # 需要先到本地下载 CLIP 模型 (建议 safetensors)
     networks:
       - app_network
     deploy:

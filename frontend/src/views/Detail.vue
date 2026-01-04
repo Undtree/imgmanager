@@ -84,9 +84,11 @@
                 <span>{{ img.width }} x {{ img.height }} px</span>
               </div>
               
-              <div class="info-card">
+              <div class="info-card flex items-start">
                 <el-icon><Location /></el-icon>
-                <span class="truncate">{{ img.location || '无位置' }}</span>
+                <span class="text-sm leading-snug break-words whitespace-normal text-gray-700 dark:text-gray-300">
+                  {{ img.location || '无位置' }}
+                </span>
               </div>
 
               <div class="info-card" title="ISO 感光度">
