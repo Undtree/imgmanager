@@ -16,38 +16,36 @@
     <div class="flex-1 flex overflow-hidden">
       
       <!-- 左侧：画布区域 -->
-      <div class="flex-1 flex flex-col relative bg-[#141414]">
-        <!-- 绑定 Style -->
-        <div class="flex-1 flex flex-col relative bg-[#141414]" :style="{ '--img-filter': filterString }" >
-          <!-- 图片容器 -->
-          <div class="flex-1 p-8 flex items-center justify-center overflow-hidden">
-            <!-- 
-              图片本身不需要加 bg-checkered。
-              CropperJS 会初始化并把图片包裹在一个容器里，
-              我们只需要确保 Cropper 的 CSS 正确加载，它自带透明背景样式。
-            -->
-            <img ref="imageRef" :src="imgUrl" class="max-w-full hidden" v-if="imgUrl"/>
-          </div>
+      <!-- 绑定 Style -->
+      <div class="flex-1 flex flex-col relative bg-[#141414] min-w-0" :style="{ '--img-filter': filterString }" >
+        <!-- 图片容器 -->
+        <div class="flex-1 p-8 flex items-center justify-center overflow-hidden">
+          <!-- 
+            图片本身不需要加 bg-checkered。
+            CropperJS 会初始化并把图片包裹在一个容器里，
+            我们只需要确保 Cropper 的 CSS 正确加载，它自带透明背景样式。
+          -->
+          <img ref="imageRef" :src="imgUrl" class="max-w-full hidden" v-if="imgUrl"/>
+        </div>
+        
+        <!-- 底部悬浮工具栏 -->
+        <div class="h-20 bg-[#1f1f1f] border-t border-[#333] flex items-center justify-center space-x-6 shrink-0 z-10">
+          <el-tooltip content="向左旋转" placement="top">
+            <el-button circle size="large" @click="rotate(-90)" class="tool-btn"><el-icon><RefreshLeft /></el-icon></el-button>
+          </el-tooltip>
+          <el-tooltip content="向右旋转" placement="top">
+            <el-button circle size="large" @click="rotate(90)" class="tool-btn"><el-icon><RefreshRight /></el-icon></el-button>
+          </el-tooltip>
           
-          <!-- 底部悬浮工具栏 -->
-          <div class="h-20 bg-[#1f1f1f] border-t border-[#333] flex items-center justify-center space-x-6 shrink-0 z-10">
-            <el-tooltip content="向左旋转" placement="top">
-              <el-button circle size="large" @click="rotate(-90)" class="tool-btn"><el-icon><RefreshLeft /></el-icon></el-button>
-            </el-tooltip>
-            <el-tooltip content="向右旋转" placement="top">
-              <el-button circle size="large" @click="rotate(90)" class="tool-btn"><el-icon><RefreshRight /></el-icon></el-button>
-            </el-tooltip>
-            
-            <div class="w-px h-8 bg-[#444] mx-2"></div>
-            
-            <span class="text-xs text-gray-500 font-bold mr-2">比例</span>
-            <el-radio-group v-model="aspectRatio" size="small" @change="setAspectRatio" class="ratio-group">
-              <el-radio-button :label="NaN">自由</el-radio-button>
-              <el-radio-button :label="1">1:1</el-radio-button>
-              <el-radio-button :label="4/3">4:3</el-radio-button>
-              <el-radio-button :label="16/9">16:9</el-radio-button>
-            </el-radio-group>
-          </div>
+          <div class="w-px h-8 bg-[#444] mx-2"></div>
+          
+          <span class="text-xs text-gray-500 font-bold mr-2">比例</span>
+          <el-radio-group v-model="aspectRatio" size="small" @change="setAspectRatio" class="ratio-group">
+            <el-radio-button :label="NaN">自由</el-radio-button>
+            <el-radio-button :label="1">1:1</el-radio-button>
+            <el-radio-button :label="4/3">4:3</el-radio-button>
+            <el-radio-button :label="16/9">16:9</el-radio-button>
+          </el-radio-group>
         </div>
       </div>
 
