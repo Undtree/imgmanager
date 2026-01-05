@@ -75,6 +75,8 @@ docker-compose up -d --build
 # 由于需要下载模型文件，首次下载可能较慢。
 ```
 
+请注意，由于我是将 CLIP 模型下载到本地并挂载，您如果直接复制 docker-compose.yml，需要注意自行下载 CLIP 的对应模型文件。
+
 !!! 有关 HF_TOKEN:
 
     由于安全限制，公开仓库默认不允许上传个人 token 。这里请您自己在 Hugging Face 上申请 token 。没有 token 也可以使用，但可能会被限流。
