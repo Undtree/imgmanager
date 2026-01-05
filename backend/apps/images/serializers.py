@@ -40,23 +40,54 @@ class ImageSerializer(serializers.ModelSerializer):
         如果是 HEIC，这里会把它变成 JPG 对象。
         """
         # 调用工具函数处理
-        converted_file = handle_heic_image(value)
-        return converted_file
+        value = handle_heic_image(value)
+
+        # 在此处提前提取 EXIF 和生成缩略图，避免 View 层重复操作
+        from .utils import get_exif_data, make_thumbnail
+        value.seek(0)
+        exif_info, width, height = get_exif_data(value)
+        value._custom_exif = exif_info
+        value._custom_width = width
+        value._custom_height = height
+
+        value.seek(0)
+        value._custom_thumb = make_thumbnail(value)
+        
+        # 将这些额外数据挂载到文件对象上，方便 create() 调用
+        value.seek(0)
+        return value
     
     def create(self, validated_data):
+        print(f"DEBUG: 最终准备保存的文件名是: {validated_data['img_url'].name}")
+        img_file = validated_data.get('img_url')
+        
         tag_names = validated_data.pop('tag_names', [])
-        # 创建图片实例
         cat_name = validated_data.pop('category_upload', None)
-        image_data = {**validated_data}
+        
+        # 合并 EXIF 数据到验证数据中
+        if hasattr(img_file, '_custom_exif'):
+            exif = img_file._custom_exif
+            validated_data.update({
+                'width': img_file._custom_width,
+                'height': img_file._custom_height,
+                'camera_model': exif.get('camera_model'),
+                'shoot_time': exif.get('shoot_time'),
+                'location': exif.get('location'),
+                'iso': exif.get('iso'),
+                'f_stop': exif.get('f_stop'),
+                'exposure_time': exif.get('exposure_time'),
+                'thumb_url': img_file._custom_thumb,
+                'file_size': int(img_file.size / 1024)
+            })
 
         if cat_name:
             # 存在则获取，不存在则创建
             category, _ = Category.objects.get_or_create(name=cat_name)
-            image_data['category'] = category
+            validated_data['category'] = category
         else:
-            image_data['category'] = None
+            validated_data['category'] = None
 
-        image = Image.objects.create(**image_data)
+        image = Image.objects.create(**validated_data)
 
         # 处理标签；如果存在则获取，不存在则创建
         for name in tag_names:

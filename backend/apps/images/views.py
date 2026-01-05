@@ -70,32 +70,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-upload_time')
 
     def perform_create(self, serializer):
-        img_file = self.request.data.get('img_url')
-        
-        # 提取 EXIF
-        exif_data, width, height = get_exif_data(img_file)
-        
-        # 生成缩略图
-        thumb_file = make_thumbnail(img_file)
-
-        # 清理不需要存入 extra_kwargs 的字段
-        exif_data.pop('width', None)
-        exif_data.pop('height', None)
-        
-        # 最后一次重置指针，为了 Django 的保存操作
-        if img_file:
-            img_file.seek(0)
-
-        # 显式指定 img_url=img_file，确保使用的是当前这个指针归零的对象
-        instance = serializer.save(
-            user=self.request.user,
-            img_url=img_file, 
-            width=width,
-            height=height,
-            file_size=int(img_file.size / 1024),
-            thumb_url=thumb_file,
-            **exif_data
-        )
+        serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['post'], url_path='analyze')
     def analyze(self, request):
@@ -107,38 +82,15 @@ class ImageViewSet(viewsets.ModelViewSet):
         if not img_file:
             return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
         
+        if hasattr(img_file, 'seek'):
+            img_file.seek(0)
         # 调用本地 AI
         tags = classify_image(img_file)
         
         return Response({"suggested_tags": tags})
 
-    def perform_update(self, serializer):
-        new_img = self.request.data.get('img_url', None)
-        
-        # 如果上传了新文件
-        if new_img and hasattr(new_img, 'read'):
-             thumb_file = make_thumbnail(new_img)
-             
-             # [修复 Bug] 这里不能用 Image.open，因为 Image 是 Django 模型
-             # 必须用 PilImage (from PIL import Image as PilImage)
-             new_img.seek(0)
-             pil_img = PilImage.open(new_img)
-             
-             # 获取新尺寸
-             width, height = pil_img.width, pil_img.height
-             
-             # 同样记得重置指针
-             new_img.seek(0)
-             
-             serializer.save(
-                 img_url=new_img, # 显式传递
-                 width=width, 
-                 height=height,
-                 file_size=int(new_img.size / 1024),
-                 thumb_url=thumb_file
-             )
-        else:
-            serializer.save()
+    def perform_update(self, serializer):        
+        serializer.save()
 
 class MCPView(APIView):
     """

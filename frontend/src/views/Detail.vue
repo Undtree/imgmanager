@@ -7,7 +7,7 @@
       <div class="flex justify-between items-center mb-6">
         <el-button @click="$router.back()" circle icon="ArrowLeft" />
         <div v-if="isOwner" class="space-x-3">
-          <!-- [关键修改] 点击跳转到 /edit/:id -->
+          <!-- 点击跳转到 /edit/:id -->
           <el-button type="primary" :icon="Edit" @click="$router.push(`/edit/${img.id}`)">
             编辑详情 & 裁剪
           </el-button>

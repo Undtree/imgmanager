@@ -11,10 +11,15 @@ print(f"正在使用计算设备: {device}")
 model_id = "openai/clip-vit-base-patch32"
 
 offline_path = "/app/offline_model"
+local_path = "../local_clip_model"
+print(f"{local_path}")
 
 if os.path.exists(os.path.join(offline_path, "config.json")):
     print(f"使用本地离线模型: {offline_path}")
     model_id = offline_path
+elif os.path.exists(os.path.join(local_path, "config.json")):
+    print(f"使用本地离线模型: {local_path}")
+    model_id = local_path
 else:
     print("未找到离线模型，尝试在线下载...")
     model_id = "openai/clip-vit-base-patch32"
@@ -89,6 +94,8 @@ def classify_image(image_file):
 
         if not suggested_tags:
             return ["其他"]
+        
+        image_file.seek(0)
 
         return suggested_tags
 

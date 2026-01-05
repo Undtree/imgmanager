@@ -6,7 +6,10 @@ import io
 import os
 import pillow_heif
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from geopy.geocoders import Nominatim
+
+pillow_heif.register_heif_opener()
 
 def _convert_to_degrees(value):
     """辅助函数：将 (度, 分, 秒) 元组转换为十进制格式"""
@@ -15,8 +18,6 @@ def _convert_to_degrees(value):
     s = value[2]
     return d + (m / 60.0) + (s / 3600.0)
 
-pillow_heif.register_heif_opener()
-
 def handle_heic_image(image_file):
     """
     检查是否为 HEIC 文件，如果是，则转换为 JPG 并保留 EXIF。
@@ -24,13 +25,26 @@ def handle_heic_image(image_file):
     """
     # 1. 检查扩展名
     if not image_file.name.lower().endswith(('.heic', '.heif')):
+        print("不是 HEIC 格式，原样跳过")
         return image_file
 
     try:
         # 2. 打开 HEIC 图片
-        img = PilImage.open(image_file)
+        print("正在打开图片...")
+        image_file.seek(0)
+        heif_file = pillow_heif.read_heif(image_file)
+
+        img = PilImage.frombytes(
+            heif_file.mode, 
+            heif_file.size, 
+            heif_file.data, 
+            "raw", 
+            heif_file.mode, 
+            heif_file.stride,
+        )
         
         # 3. 转换为 RGB (HEIC 可能是 RGBA)
+        print(f"原始格式: {img.format}, 模式: {img.mode}")
         img = img.convert('RGB')
         
         # 4. 提取 EXIF 数据 (关键步骤，否则转换后 EXIF 丢失)
@@ -38,23 +52,29 @@ def handle_heic_image(image_file):
 
         # 5. 保存为 JPEG 到内存中
         output_io = io.BytesIO()
-        save_kwargs = {'format': 'JPEG', 'quality': 100}
-        
-        # 如果有 EXIF，就带上
-        if exif_data:
-            save_kwargs['exif'] = exif_data
-            
-        img.save(output_io, **save_kwargs)
+        print("正在进行编码转换...")
+        img.save(output_io, format='JPEG', quality=95, exif=exif_data if exif_data else b"")
+        file_size = output_io.tell()
         output_io.seek(0)
         
         # 6. 生成新的文件名 (xxx.heic -> xxx.jpg)
         new_name = image_file.name.rsplit('.', 1)[0] + '.jpg'
+        print(f"转换成功！新文件名: {new_name}")
         
         # 7. 返回 Django 可识别的文件对象
-        return ContentFile(output_io.read(), name=new_name)
+        return InMemoryUploadedFile(
+            file=output_io,
+            field_name='img_url',
+            name=new_name,
+            content_type='image/jpeg',
+            size=file_size,
+            charset=None
+        )
 
     except Exception as e:
-        print(f"HEIC 转换失败: {e}")
+        print(f"转换错误：{str(e)}") 
+        import traceback
+        traceback.print_exc()
         return image_file # 如果失败，返回原文件尝试处理
     
 def get_address_from_gps(lat, lon):
