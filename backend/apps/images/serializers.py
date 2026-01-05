@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Image, Tag, Category
-from .utils import handle_heic_image 
+from .utils import handle_heic_image, get_exif_data, make_thumbnail
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,17 +41,6 @@ class ImageSerializer(serializers.ModelSerializer):
         """
         # 调用工具函数处理
         value = handle_heic_image(value)
-
-        # 在此处提前提取 EXIF 和生成缩略图，避免 View 层重复操作
-        from .utils import get_exif_data, make_thumbnail
-        value.seek(0)
-        exif_info, width, height = get_exif_data(value)
-        value._custom_exif = exif_info
-        value._custom_width = width
-        value._custom_height = height
-
-        value.seek(0)
-        value._custom_thumb = make_thumbnail(value)
         
         # 将这些额外数据挂载到文件对象上，方便 create() 调用
         value.seek(0)
@@ -65,21 +54,27 @@ class ImageSerializer(serializers.ModelSerializer):
         cat_name = validated_data.pop('category_upload', None)
         
         # 合并 EXIF 数据到验证数据中
-        if hasattr(img_file, '_custom_exif'):
-            exif = img_file._custom_exif
-            validated_data.update({
-                'width': img_file._custom_width,
-                'height': img_file._custom_height,
-                'camera_model': exif.get('camera_model'),
-                'shoot_time': exif.get('shoot_time'),
-                'location': exif.get('location'),
-                'iso': exif.get('iso'),
-                'f_stop': exif.get('f_stop'),
-                'exposure_time': exif.get('exposure_time'),
-                'thumb_url': img_file._custom_thumb,
-                'file_size': int(img_file.size / 1024)
-            })
-
+        if hasattr(img_file, 'seek'): img_file.seek(0)
+        exif_info, width, height = get_exif_data(img_file)
+        
+        if hasattr(img_file, 'seek'): img_file.seek(0)
+        thumb_file = make_thumbnail(img_file)
+        
+        # 4. 将提取的数据补充进 validated_data
+        # 即使 get_exif_data 返回 None，get() 也会处理，不会报错
+        validated_data.update({
+            'width': width,
+            'height': height,
+            'file_size': int(img_file.size / 1024),
+            'thumb_url': thumb_file,
+            'camera_model': exif_info.get('camera_model'),
+            'shoot_time': exif_info.get('shoot_time'),
+            'location': exif_info.get('location'),
+            'iso': exif_info.get('iso'),
+            'f_stop': exif_info.get('f_stop'),
+            'exposure_time': exif_info.get('exposure_time'),
+        })
+        
         if cat_name:
             # 存在则获取，不存在则创建
             category, _ = Category.objects.get_or_create(name=cat_name)
@@ -87,6 +82,7 @@ class ImageSerializer(serializers.ModelSerializer):
         else:
             validated_data['category'] = None
 
+        if hasattr(img_file, 'seek'): img_file.seek(0)
         image = Image.objects.create(**validated_data)
 
         # 处理标签；如果存在则获取，不存在则创建

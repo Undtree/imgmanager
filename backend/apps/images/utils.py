@@ -25,7 +25,7 @@ def handle_heic_image(image_file):
     """
     # 1. 检查扩展名
     if not image_file.name.lower().endswith(('.heic', '.heif')):
-        print("不是 HEIC 格式，原样跳过")
+        print("不是 HEIC/HEIF 格式，原样返回")
         return image_file
 
     try:
@@ -48,7 +48,7 @@ def handle_heic_image(image_file):
         img = img.convert('RGB')
         
         # 4. 提取 EXIF 数据 (关键步骤，否则转换后 EXIF 丢失)
-        exif_data = img.info.get('exif')
+        exif_data = heif_file.info.get('exif')
 
         # 5. 保存为 JPEG 到内存中
         output_io = io.BytesIO()
